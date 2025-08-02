@@ -133,8 +133,8 @@ async function saveEmployee(e) {
     }
 
     // ✅ Kirim data + foto
-    const formData = new FormData(employeeForm);
-    formData.delete("photo"); // Hapus input lama
+    const formData = new FormData(document.getElementById("addEmployeeForm"));
+    formData.delete("photo"); 
 
     capturedImages.forEach((imgData, idx) => {
         const blob = dataURLtoBlob(imgData);
