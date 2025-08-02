@@ -141,6 +141,11 @@ async function saveEmployee(e) {
         formData.append("files", blob, `face_${idx + 1}.jpg`);
     });
 
+    // 🔹 CEK DATA YANG DIKIRIM
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ": " + pair[1]);
+    }
+
     const token = localStorage.getItem('token');
 
     try {
