@@ -163,6 +163,15 @@ async function saveEmployee(e) {
             body: formData
         });
 
+        let data;
+        try {
+        data = await response.json();
+        console.log("Response JSON:", data);
+        } catch (err) {
+        console.log("Response TEXT:", await response.text());
+        Swal.fire("Error!", "Server returned non-JSON response", "error");
+        return;
+        }
         Swal.close();
 
         if (response.ok) {
