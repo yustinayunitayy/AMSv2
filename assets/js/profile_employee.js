@@ -165,14 +165,16 @@ async function saveEmployee(e) {
 
         let data;
         try {
-        data = await response.json();
-        console.log("Response JSON:", data);
+            data = await response.json();
+            console.log("✅ Parsed JSON:", data);
         } catch (err) {
-        console.log("Response TEXT:", await response.text());
-        Swal.fire("Error!", "Server returned non-JSON response", "error");
-        return;
+            const text = await response.text();
+            console.error("❌ Failed to parse JSON. Raw response:", text);
+            console.error("⚠️ Error object:", err);
+            Swal.fire("Error!", "Server returned non-JSON response", "error");
+            return;
         }
-        Swal.close();
+
 
         if (response.ok) {
             Swal.fire({
@@ -184,13 +186,13 @@ async function saveEmployee(e) {
             });
 
             employeeForm.reset();
-            capturedImages = []; // reset foto
+            capturedImages = [];
             fetchEmployees();
 
         } else {
-            const errorData = await response.json();
-            Swal.fire('Error!', errorData.detail || 'Failed to register employee.', 'error');
+            Swal.fire('Error!', data.detail || 'Failed to register employee.', 'error'); // pakai data, bukan errorData
         }
+
     } catch (error) {
         Swal.fire('Error!', `An error occurred: ${error.message}`, 'error');
     }

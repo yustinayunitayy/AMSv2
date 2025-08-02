@@ -24,7 +24,7 @@ async def add_employee(
     current_user: m.User = Depends(get_current_user),
     first_name: str = Form(...),
     last_name: str = Form(...),
-    nrp_id: str = Form(...),
+    nrp_id: int = Form(...),
     email: str = Form(...),
     phone_number: str = Form(...),
     position: str = Form(...),
@@ -61,7 +61,7 @@ async def add_employee(
         employee = m.Employee(
             first_name=first_name,
             last_name=last_name,
-            nrp_id = int(nrp_id),
+            nrp_id = nrp_id,
             email=email,
             phone_number=phone_number,
             position=position,
