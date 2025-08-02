@@ -254,10 +254,16 @@ captureBtn.addEventListener("click", () => {
     }
 });
 
-// 🔹 Finish button logic
 finishBtn.addEventListener("click", () => {
     updatePreviewInForm();
     $("#captureFaceModal").modal("hide");
+
+    // Tunggu modal face capture benar-benar tertutup dulu
+    $('#captureFaceModal').on('hidden.bs.modal', function () {
+        $("#addEmployeeModal").modal("show");
+        // Supaya event tidak nambah berkali-kali
+        $('#captureFaceModal').off('hidden.bs.modal');
+    });
 });
 
 // 🔹 Update UI tiap step

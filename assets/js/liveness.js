@@ -78,75 +78,81 @@ export async function startLivenessCheck() {
 
     const leftEyeIndices = [33, 160, 158, 133, 153, 144];
     const rightEyeIndices = [263, 387, 385, 362, 380, 373];
-    
-    faceMesh.onResults(async(results) => {
+
+    // Cleanup function untuk stop kamera + close FaceMesh
+    const cleanup = async () => {
+      isLivenessActive = false;
+      try {
+        camera.stop();
+      } catch (err) {
+        console.warn("Camera stop error:", err);
+      }
+      try {
+        await faceMesh.close();
+      } catch (err) {
+        console.warn("FaceMesh close error:", err);
+      }
+    };
+
+    faceMesh.onResults(async (results) => {
+      if (!isLivenessActive) return; // Jangan proses kalau sudah stop
+
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-        
         const landmarks = results.multiFaceLandmarks[0];
         const leftEAR = calculateEAR(landmarks, leftEyeIndices);
         const rightEAR = calculateEAR(landmarks, rightEyeIndices);
         const currentEAR = (leftEAR + rightEAR) / 2.0;
         const earDrop = lastEAR - currentEAR;
         const now = getTrustedNow();
-        console.log(`Current EAR: ${currentEAR.toFixed(4)}, Last EAR: ${lastEAR.toFixed(4)}, Blink Count: ${blinkCount}`);
 
-        // Silent verify 
+        // Silent verify (cuma sekali)
         if (!hasVerifiedIdentity) {
           hasVerifiedIdentity = true;
           const verified = await silentVerify(videoElement);
           if (!verified) {
-           Swal.fire({
-            icon: 'error',
-            title: 'You are not the valid user!',
-            showConfirmButton: false,
-            timer: 1000,
-            timerProgressBar: true,
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            // didClose: () => {
-            //   window.location.href = "/html/Login.html";
-            // }
-          });
-          camera.stop();
-          faceMesh.close();
-          isLivenessActive = false;
+            Swal.fire({
+              icon: 'error',
+              title: 'You are not the valid user!',
+              showConfirmButton: false,
+              timer: 1000,
+              timerProgressBar: true,
+              allowOutsideClick: false,
+              allowEscapeKey: false
+            });
+            await cleanup();
+            return resolve(false);
           }
         }
+
         if (!blinkDetected && (lastEAR - currentEAR > 0.08) && currentEAR < 0.22) {
           blinkStart = Date.now();
           blinkDetected = true;
-          console.log("Blink start detected...");
         }
 
         if (earDrop > 0.12 && currentEAR < 0.25) {
-            if (now - lastBlinkTime > 300) {  
-                blinkCount++;
-                lastBlinkTime = now;
-                console.log(`Blink Detected! Current EAR: ${currentEAR.toFixed(4)}, Last EAR: ${lastEAR.toFixed(4)}, Blink Count: ${blinkCount}`);
-            } else {
-                console.log('Ignored: Blink too fast, possible spoof.');
-            }
+          if (now - lastBlinkTime > 300) {
+            blinkCount++;
+            lastBlinkTime = now;
+          }
         }
+
         lastEAR = currentEAR;
 
         if (blinkCount > 1) {
-          console.log('Liveness PASSED');
-          isLivenessActive = false;
-          camera.stop();
-          faceMesh.close();
-          resolve(true);
+          await cleanup();
+          return resolve(true);
         }
-      } else {
-        console.log('No face landmarks detected.');
       }
     });
 
-    console.log('Starting Camera...');
     const camera = new window.Camera(videoElement, {
       onFrame: async () => {
-        if (!isLivenessActive) return;
-        console.log('Sending frame to FaceMesh...');
-        await faceMesh.send({ image: videoElement });
+        if (!isLivenessActive) return; // Stop kirim frame setelah cleanup
+        try {
+          await faceMesh.send({ image: videoElement });
+        } catch (err) {
+          console.warn("FaceMesh send error (ignored):", err);
+        }
       },
       width: 640,
       height: 480,
@@ -154,12 +160,9 @@ export async function startLivenessCheck() {
 
     camera.start();
 
-    setTimeout(() => {
+    setTimeout(async () => {
       if (blinkCount < 1) {
-        console.log('Liveness Check Timeout');
-        isLivenessActive = false;
-        camera.stop();
-        faceMesh.close();
+        await cleanup();
         resolve(false);
       }
     }, 5000);
