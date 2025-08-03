@@ -33,6 +33,9 @@ async def add_employee(
     files: List[UploadFile] = File(...), 
     db: Session = Depends(get_db)
 ):
+    print("✅ Form fields received:", first_name, last_name, email, nrp_id, phone_number, position, department, join_date)
+    print("✅ Total files:", len(files))
+
     try:
         # 🔹 Cek apakah NRP sudah ada
         if db.query(m.Employee).filter(m.Employee.nrp_id == nrp_id).first():

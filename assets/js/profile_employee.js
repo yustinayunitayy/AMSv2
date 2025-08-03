@@ -138,6 +138,7 @@ async function saveEmployee(e) {
 
     capturedImages.forEach((imgData, idx) => {
         const blob = dataURLtoBlob(imgData);
+        console.log('Captured Images:', capturedImages.length);
         formData.append("files", blob, `face_${idx + 1}.jpg`);
     });
 
