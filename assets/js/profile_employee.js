@@ -133,8 +133,8 @@ async function saveEmployee(e) {
     }
 
     // ✅ Kirim data + foto
-    const formData = new FormData(document.getElementById("addEmployeeForm"));
-    formData.delete("photo"); 
+    const formData = new FormData(employeeForm);
+    formData.delete("photo"); // Hapus input lama
 
     capturedImages.forEach((imgData, idx) => {
         const blob = dataURLtoBlob(imgData);
@@ -184,17 +184,31 @@ async function saveEmployee(e) {
                 timer: 1500,
                 showConfirmButton: false
             });
-
+            
             employeeForm.reset();
-            capturedImages = [];
+            capturedImages = []; // reset foto
             fetchEmployees();
 
         } else {
-            Swal.fire('Error!', data.detail || 'Failed to register employee.', 'error'); // pakai data, bukan errorData
+            let errorMsg = 'Failed to register employee.';
+            try {
+                const errorData = await response.json();
+                if (typeof errorData.detail === 'string') {
+                    errorMsg = errorData.detail;
+                } else if (Array.isArray(errorData.detail)) {
+                    errorMsg = errorData.detail.map(d => d.msg || JSON.stringify(d)).join('<br>');
+                } else if (typeof errorData.detail === 'object' && errorData.detail !== null) {
+                    errorMsg = JSON.stringify(errorData.detail);
+                }
+            } catch (e) {
+                errorMsg = 'Unexpected server error.';
+            }
+
+            Swal.fire('Error!', errorMsg, 'error'); 
         }
 
-    } catch (error) {
-        Swal.fire('Error!', `An error occurred: ${error.message}`, 'error');
+    } catch (err) {
+        Swal.fire('Error!', 'Something went wrong. Please try again later.', 'error');
     }
 }
 
@@ -272,12 +286,9 @@ captureBtn.addEventListener("click", () => {
 
 finishBtn.addEventListener("click", () => {
     updatePreviewInForm();
-    $("#captureFaceModal").modal("hide");
-
-    // Tunggu modal face capture benar-benar tertutup dulu
+    $('#captureFaceModal').modal('hide'); // Langsung tutup modal
     $('#captureFaceModal').on('hidden.bs.modal', function () {
         $("#addEmployeeModal").modal("show");
-        // Supaya event tidak nambah berkali-kali
         $('#captureFaceModal').off('hidden.bs.modal');
     });
 });

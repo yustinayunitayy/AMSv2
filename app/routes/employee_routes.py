@@ -44,14 +44,14 @@ async def add_employee(
             image_bytes = await file.read()
             img = read_image(image_bytes)
 
-            encodings = encode_face_multi(img) 
-            if not encodings:
+            encodings = encode_face_multi(img)
+            if encodings is None or len(encodings) == 0:
                 raise HTTPException(
                     status_code=400,
                     detail=f"No face detected in image {idx}. Please upload clear face photos."
                 )
 
-            all_encodings.extend(encodings) 
+            all_encodings.extend(encodings)
 
         if not all_encodings:
             raise HTTPException(status_code=400, detail="No face detected in any uploaded images.")
