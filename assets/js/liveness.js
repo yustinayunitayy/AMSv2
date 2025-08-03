@@ -173,6 +173,6 @@ export async function startLivenessCheck() {
         cleanup();
         resolve(false);
       }
-    }, 5000);
+    }, 10000);
   });
 }
